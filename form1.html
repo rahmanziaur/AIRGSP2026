@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Page</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    .banner {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .content {
+      padding: 20px;
+      max-width: 500px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input {
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .status {
+      margin-top: 4px;
+      font-size: 13px;
+    }
+    .status.checking { color: #888; }
+    .status.valid { color: green; }
+    .status.invalid { color: red; }
+    button {
+      padding: 10px 20px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    #formMessage {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    #formMessage.success { color: green; }
+    #formMessage.error { color: red; }
+  </style>
+</head>
+<body>
+
+  <img class="banner" src="https://raw.githubusercontent.com/rahmanziaur/AIRGSP2026/main/asset/wall1.jpg" alt="Banner">
+
+  <div class="content">
+    <h1>Registration Form</h1>
+
+    <form id="regForm">
+      <div class="form-group">
+        <label for="fullName">Full Name</label>
+        <input type="text" id="fullName" name="fullName" required>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required>
+        <span id="emailStatus" class="status"></span>
+      </div>
+
+      <div class="form-group">
+        <label for="contactNumber">Contact Number</label>
+        <input type="tel" id="contactNumber" name="contactNumber" required>
+      </div>
+
+      <button type="submit" id="submitBtn">Register</button>
+    </form>
+
+    <div id="formMessage"></div>
+  </div>
+
+  <script>
+    const API_KEY = "af925c3c8df24c819f558180f53e9d61";
+    const emailInput = document.getElementById("email");
+    const emailStatus = document.getElementById("emailStatus");
+    const regForm = document.getElementById("regForm");
+    const formMessage = document.getElementById("formMessage");
+    let emailIsValid = false;
+
+    async function verifyEmail(email) {
+      emailStatus.textContent = "Checking...";
+      emailStatus.className = "status checking";
+      emailIsValid = false;
+
+      try {
+        const response = await fetch(
+          `https://emailreputation.abstractapi.com/v1/?api_key=${API_KEY}&email=${encodeURIComponent(email)}`
+        );
+        const data = await response.json();
+
+        const deliverable = data?.email_deliverability?.status === "deliverable";
+        const validFormat = data?.email_deliverability?.is_format_valid;
+
+        if (deliverable || validFormat) {
+          emailIsValid = true;
+          emailStatus.textContent = "✓ Valid email";
+          emailStatus.className = "status valid";
+        } else {
+          emailStatus.textContent = "✗ Invalid email";
+          emailStatus.className = "status invalid";
+        }
+      } catch (error) {
+        emailStatus.textContent = "Could not verify email";
+        emailStatus.className = "status invalid";
+      }
+    }
+
+    let debounceTimer;
+    emailInput.addEventListener("input", () => {
+      clearTimeout(debounceTimer);
+      const email = emailInput.value.trim();
+      emailStatus.textContent = "";
+      emailIsValid = false;
+
+      if (email.length > 5 && email.includes("@")) {
+        debounceTimer = setTimeout(() => verifyEmail(email), 600);
+      }
+    });
+
+    regForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      if (!emailIsValid) {
+        formMessage.textContent = "Please enter a valid, verified email before submitting.";
+        formMessage.className = "error";
+        return;
+      }
+
+      formMessage.textContent = "Registration submitted successfully!";
+      formMessage.className = "success";
+      regForm.reset();
+      emailStatus.textContent = "";
+    });
+  </script>
+
+</body>
+</html>
